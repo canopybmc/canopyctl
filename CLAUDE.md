@@ -1,0 +1,1 @@
+Use  Conventional Commits to structure your commit. Do small and structured commits - each commit should be runable. Write production-grade code. Make a newline at the end of each file. Strip trailing whitespaces.
