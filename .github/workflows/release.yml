@@ -1,0 +1,172 @@
+name: Release canopyctl
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+    
+    - name: Run comprehensive tests
+      run: |
+        python test-comprehensive.py
+    
+    - name: Test CLI functionality
+      run: |
+        canopyctl --help
+        canopyctl rebase --help
+        canopyctl config --help
+
+  build-and-release:
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine pyinstaller
+    
+    - name: Build Python packages
+      run: |
+        python -m build
+    
+    - name: Build standalone executable (Linux)
+      run: |
+        pyinstaller --onefile --name canopyctl-linux-x64 canopyctl.py
+        chmod +x dist/canopyctl-linux-x64
+    
+    - name: Create checksums
+      run: |
+        cd dist
+        sha256sum * > SHA256SUMS
+    
+    - name: Extract version from tag
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: canopyctl ${{ env.VERSION }}
+        body: |
+          ## canopyctl ${{ env.VERSION }}
+          
+          ### Installation Options
+          
+          **Python Package (Recommended)**:
+          ```bash
+          pip install canopyctl==${{ env.VERSION }}
+          ```
+          
+          **Standalone Binary (Linux x64)**:
+          Download `canopyctl-linux-x64`, make executable, and run directly.
+          
+          **From Source**:
+          ```bash
+          pip install canopyctl-${{ env.VERSION }}.tar.gz
+          ```
+          
+          ### Usage
+          ```bash
+          canopyctl rebase          # Smart rebase with auto-detection
+          canopyctl rebase --help   # See all options
+          canopyctl config show     # Analyze Yocto configurations
+          ```
+          
+          See [README-rebase.md](README-rebase.md) for detailed documentation.
+        draft: false
+        prerelease: false
+    
+    - name: Upload Python Wheel
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/canopyctl-${{ env.VERSION }}-py3-none-any.whl
+        asset_name: canopyctl-${{ env.VERSION }}-py3-none-any.whl
+        asset_content_type: application/zip
+    
+    - name: Upload Source Distribution
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/canopyctl-${{ env.VERSION }}.tar.gz
+        asset_name: canopyctl-${{ env.VERSION }}.tar.gz
+        asset_content_type: application/gzip
+    
+    - name: Upload Linux Executable
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/canopyctl-linux-x64
+        asset_name: canopyctl-linux-x64
+        asset_content_type: application/octet-stream
+    
+    - name: Upload Checksums
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/SHA256SUMS
+        asset_name: SHA256SUMS
+        asset_content_type: text/plain
+
+  publish-to-pypi:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+    
+    - name: Build packages
+      run: python -m build
+    
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
