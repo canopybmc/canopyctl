@@ -311,16 +311,21 @@ class RepoAnalyzer:
             return None
     
     def _find_canopy_remote(self) -> Optional[str]:
-        """Find Canopy remote (canopybmc/openbmc)."""
+        """
+        Find Canopy remote (canopybmc/openbmc).
+        Checks for both HTTPS and SSH URLs.
+        """
         try:
             remotes = self.git_ops.get_remote_list()
             
-            # Look for remote with canopybmc/openbmc URL
+            # Look for remote with canopybmc/openbmc URL (both HTTPS and SSH)
             for remote in remotes:
                 if remote.strip():
                     try:
                         url = self.git_ops.get_remote_url(remote.strip())
-                        if 'canopybmc/openbmc' in url:
+                        # Check for both HTTPS and SSH patterns
+                        if ('canopybmc/openbmc' in url or 
+                            'github.com:canopybmc/openbmc' in url):
                             return remote.strip()
                     except GitError:
                         continue
@@ -329,7 +334,8 @@ class RepoAnalyzer:
             if 'origin' in remotes:
                 try:
                     url = self.git_ops.get_remote_url('origin')
-                    if 'canopybmc' in url:
+                    if ('canopybmc' in url or 
+                        'github.com:canopybmc/openbmc' in url):
                         return 'origin'
                 except GitError:
                     pass

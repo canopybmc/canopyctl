@@ -156,6 +156,17 @@ class GitOperations:
         except (GitError, ValueError):
             return 0
     
+    def rebase(self, onto: str) -> None:
+        """Rebase current branch onto specified commit/branch."""
+        try:
+            self._run_git(['rebase', onto])
+        except GitError as e:
+            # Re-raise with more context for rebase conflicts
+            if 'conflict' in str(e).lower() or 'merge conflict' in str(e).lower():
+                raise GitError(f"Rebase conflicts detected. Resolve conflicts and use 'canopyctl rebase --continue'")
+            else:
+                raise
+    
     def _find_repo_root(self) -> Path:
         """Find Git repository root."""
         try:

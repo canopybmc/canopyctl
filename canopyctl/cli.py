@@ -41,11 +41,7 @@ def create_parser() -> argparse.ArgumentParser:
     list_parser.add_argument('pattern', nargs='?', help='Filter pattern - supports glob patterns like phosphor* or *network* (optional)')
 
     # rebase command
-    rebase_parser = subparsers.add_parser('rebase', help='Smart rebase against upstream OpenBMC')
-    
-    # Main rebase command (auto-detects current branch by default)
-    rebase_parser.add_argument('--remote', default='upstream', help='Remote to rebase against (default: upstream)')
-    rebase_parser.add_argument('--branch', help='Branch to rebase against (default: auto-detect from current branch)')
+    rebase_parser = subparsers.add_parser('rebase', help='Smart rebase against Canopy repository')
     
     # rebase --continue
     rebase_parser.add_argument('--continue', action='store_true', help='Continue rebase after resolving conflicts')
@@ -90,10 +86,8 @@ def main() -> int:
         elif getattr(args, 'continue', False):
             return rebase_command.continue_rebase()
         else:
-            # Execute rebase with remote and branch parameters
-            remote = getattr(args, 'remote', 'upstream')
-            branch = getattr(args, 'branch', None)
-            return rebase_command.execute_rebase(remote, branch)
+            # Execute rebase (new workflow - no parameters needed)
+            return rebase_command.execute_rebase()
 
     parser.print_help()
     return 1

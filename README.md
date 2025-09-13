@@ -35,9 +35,8 @@ canopyctl config show
 # Analyze a specific recipe
 canopyctl config show <recipe-name>
 
-# Smart rebase functionality
-canopyctl rebase          # Auto-detects target branch
-canopyctl rebase --branch master  # Explicit branch
+# Smart Canopy rebase functionality
+canopyctl rebase          # Auto-detects branch strategy and target
 ```
 
 ### Examples
@@ -49,11 +48,14 @@ canopyctl config show systemd
 # Analyze a custom recipe
 canopyctl config show my-custom-service
 
-# Rebase against upstream with auto-detection
+# Smart Canopy rebase with auto-detection
 canopyctl rebase
 
-# Rebase against specific branch
-canopyctl rebase --branch kirkstone
+# Continue after resolving conflicts
+canopyctl rebase --continue
+
+# Abort rebase and restore original state
+canopyctl rebase --abort
 ```
 
 ## Requirements

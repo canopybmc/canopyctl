@@ -19,15 +19,8 @@ chmod +x canopyctl-simple
 ### Rebase Commands
 
 ```bash
-# Smart rebase (auto-detects target branch)
+# Smart Canopy rebase (auto-detects strategy and target)
 canopyctl rebase
-
-# Rebase against specific branch  
-canopyctl rebase --branch master
-canopyctl rebase --branch kirkstone
-
-# Rebase against different remote
-canopyctl rebase --remote origin --branch main
 
 # Continue after resolving conflicts
 canopyctl rebase --continue
@@ -75,17 +68,24 @@ canopyctl config list "*network*"
 1. `canopyctl rebase --abort` - Restore original state
 2. Or manually: `git reset --hard canopy-backup-<timestamp>`
 
-## Smart Branch Detection Logic
+## Smart Canopy Rebase Logic
 
-1. **Exact Match**: Looks for `upstream/current-branch`
-2. **Canopy Analysis**: Checks if branch exists on Canopy remote
-3. **History Analysis**: Uses git merge-base to find origin branch
-4. **Fallback**: Defaults to `upstream/master`
+### Main Branch Strategy
+When on `main`:
+1. **Check for changes**: Fetches from Canopy remote and compares with local main
+2. **No changes**: Returns "Already up to date"
+3. **Changes found**: Shows stats and prompts for confirmation before rebasing
+
+### Feature Branch Strategy
+When on any other branch:
+1. **Remote branch check**: Looks for matching branch on Canopy remote
+2. **Origin detection**: If no match, analyzes git history to find origin (main or LTS/*)
+3. **Rebase target**: Uses either matching remote branch or detected origin branch
 
 ### Examples
-- `LTS/2025.08` → detects → `upstream/master`
-- `main` → detects → `upstream/master`  
-- `feature/xyz` → traces history → best upstream match
+- On `main` → rebases against `canopy/main` if changes exist
+- On `LTS/2025.08` → rebases against `canopy/LTS/2025.08` if it exists
+- On `feature/xyz` → analyzes history → rebases against origin branch (main or LTS/*)
 
 ## Common Patterns
 
@@ -134,19 +134,24 @@ git stash push -m "Before rebase"
 # After rebase: git stash pop
 ```
 
-### `No upstream remote found`
+### `No Canopy remote found`
 ```bash
-git remote add upstream https://github.com/openbmc/openbmc.git
-git fetch upstream
+# Add Canopy remote (HTTPS)
+git remote add canopy https://github.com/canopybmc/openbmc.git
+git fetch canopy
+
+# Or SSH
+git remote add canopy git@github.com:canopybmc/openbmc.git
+git fetch canopy
 ```
 
-### `Cannot find branch upstream/xyz`
+### `Cannot determine origin branch`
 ```bash
-# Check available branches
-git branch -r | grep upstream
+# Check available Canopy branches
+git branch -r | grep canopy
 
-# Use explicit branch
-canopyctl rebase --branch master
+# Manually verify your branch history
+git log --oneline --graph -10
 ```
 
 ## File Locations
@@ -162,7 +167,7 @@ canopyctl rebase --branch master
 ## Environment
 
 ### Prerequisites
-- Git repository with upstream remote
+- Git repository with Canopy remote (github.com/canopybmc/openbmc)
 - Clean working directory (no uncommitted changes)
 - Python 3.8+ (for pip install) or standalone binary
 
