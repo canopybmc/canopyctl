@@ -5,8 +5,22 @@ Command line interface for canopyctl.
 import argparse
 import sys
 
-from .core import CanopyCtl
-from .commands import ConfigShowCommand
+# Import CanopyCtl with fallback to direct file import
+try:
+    from .core import CanopyCtl
+    if CanopyCtl is None:
+        raise ImportError("CanopyCtl resolved to None")
+except (ImportError, AttributeError):
+    # Direct import from core.py as fallback
+    from pathlib import Path
+    import importlib.util
+    
+    core_path = Path(__file__).parent / "core.py"
+    spec = importlib.util.spec_from_file_location("core", core_path)
+    core_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(core_module)
+    CanopyCtl = core_module.CanopyCtl
+from .commands import ConfigShowCommand, ConfigListCommand, RebaseCommand
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -22,6 +36,23 @@ def create_parser() -> argparse.ArgumentParser:
     show_parser = config_subparsers.add_parser('show', help='Show configuration')
     show_parser.add_argument('recipe', nargs='?', help='Recipe name to analyze')
     
+    # config list command
+    list_parser = config_subparsers.add_parser('list', help='List all available recipes')
+    list_parser.add_argument('pattern', nargs='?', help='Filter pattern - supports glob patterns like phosphor* or *network* (optional)')
+
+    # rebase command
+    rebase_parser = subparsers.add_parser('rebase', help='Smart rebase against upstream OpenBMC')
+    
+    # Main rebase command (auto-detects current branch by default)
+    rebase_parser.add_argument('--remote', default='upstream', help='Remote to rebase against (default: upstream)')
+    rebase_parser.add_argument('--branch', help='Branch to rebase against (default: auto-detect from current branch)')
+    
+    # rebase --continue
+    rebase_parser.add_argument('--continue', action='store_true', help='Continue rebase after resolving conflicts')
+    
+    # rebase --abort  
+    rebase_parser.add_argument('--abort', action='store_true', help='Abort rebase and restore original state')
+
     return parser
 
 
@@ -44,7 +75,26 @@ def main() -> int:
             canopyctl = CanopyCtl()
             config_show = ConfigShowCommand(canopyctl)
             return config_show.execute(getattr(args, 'recipe', None))
-    
+        
+        if args.config_command == 'list':
+            canopyctl = CanopyCtl()
+            config_list = ConfigListCommand(canopyctl)
+            return config_list.execute(getattr(args, 'pattern', None))
+
+    if args.command == 'rebase':
+        rebase_command = RebaseCommand()
+        
+        # Handle continue/abort flags
+        if getattr(args, 'abort', False):
+            return rebase_command.abort_rebase()
+        elif getattr(args, 'continue', False):
+            return rebase_command.continue_rebase()
+        else:
+            # Execute rebase with remote and branch parameters
+            remote = getattr(args, 'remote', 'upstream')
+            branch = getattr(args, 'branch', None)
+            return rebase_command.execute_rebase(remote, branch)
+
     parser.print_help()
     return 1
 

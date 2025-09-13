@@ -141,3 +141,47 @@ class ConfigShowCommand:
                     config_vars[var][str(bb_file)] = value
         
         return config_vars
+
+
+class ConfigListCommand:
+    """Command to list available recipes."""
+    
+    def __init__(self, canopyctl: CanopyCtl):
+        self.canopyctl = canopyctl
+        self.recipe_analyzer = RecipeAnalyzer()
+
+    def execute(self, pattern: Optional[str] = None) -> int:
+        """Execute the config list command."""
+        print("=== Available Recipes ===\n")
+        
+        if not self.canopyctl.build_dir:
+            print("Error: Could not find build directory with conf/local.conf")
+            return 1
+        
+        # Find all recipes in meta layers
+        recipes = []
+        for layer in self.canopyctl.meta_layers:
+            for bb_file in layer.rglob("*.bb"):
+                recipe_name = bb_file.stem
+                if '_' in recipe_name:
+                    recipe_name = recipe_name.split('_')[0]
+                recipes.append(recipe_name)
+        
+        recipes = sorted(list(set(recipes)))
+        
+        # Filter by pattern if provided
+        if pattern:
+            import fnmatch
+            recipes = [r for r in recipes if fnmatch.fnmatch(r, pattern)]
+            print(f"Recipes matching pattern '{pattern}':")
+        else:
+            print("All available recipes:")
+        
+        if recipes:
+            for recipe in recipes:
+                print(f"  - {recipe}")
+            print(f"\nTotal: {len(recipes)} recipes")
+        else:
+            print("No recipes found")
+        
+        return 0

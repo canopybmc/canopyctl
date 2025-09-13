@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "canopyctl"
+version = "0.2.0"
+authors = [
+    {name = "Canopy Team", email = "info@canopybmc.org"},
+]
+description = "A tool for managing and inspecting Canopy configurations"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9", 
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Tools",
+    "Topic :: System :: Systems Administration",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/canopybmc/canopyctl"
+Repository = "https://github.com/canopybmc/canopyctl"
+"Bug Tracker" = "https://github.com/canopybmc/canopyctl/issues"
+
+[project.scripts]
+canopyctl = "canopyctl.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["canopyctl*"]

@@ -24,26 +24,36 @@ The `canopyctl config show` command provides comprehensive configuration analysi
 
 ```bash
 # Show help
-./canopyctl.py --help
+canopyctl --help
 
 # Show configuration help
-./canopyctl.py config --help
+canopyctl config --help
 
 # Show overall configuration
-./canopyctl.py config show
+canopyctl config show
 
 # Analyze a specific recipe
-./canopyctl.py config show <recipe-name>
+canopyctl config show <recipe-name>
+
+# Smart rebase functionality
+canopyctl rebase          # Auto-detects target branch
+canopyctl rebase --branch master  # Explicit branch
 ```
 
 ### Examples
 
 ```bash
 # Analyze the systemd recipe
-./canopyctl.py config show systemd
+canopyctl config show systemd
 
 # Analyze a custom recipe
-./canopyctl.py config show my-custom-service
+canopyctl config show my-custom-service
+
+# Rebase against upstream with auto-detection
+canopyctl rebase
+
+# Rebase against specific branch
+canopyctl rebase --branch kirkstone
 ```
 
 ## Requirements
@@ -53,12 +63,33 @@ The `canopyctl config show` command provides comprehensive configuration analysi
 
 ## Installation
 
-1. Clone or download this repository
-2. Make the script executable:
-   ```bash
-   chmod +x canopyctl.py
-   ```
-3. Run from the build environment directory
+### Quick Install (Recommended)
+```bash
+# Install from source directory
+pip install -e .
+
+# Now you can use 'canopyctl' directly
+canopyctl --help
+canopyctl rebase --help
+```
+
+### Alternative: Direct Script Usage
+```bash
+# Make executable and run directly  
+chmod +x canopyctl.py
+python canopyctl.py --help
+```
+
+For detailed installation instructions, see [INSTALL.md](INSTALL.md).
+
+## Documentation
+
+📚 **[Complete Documentation](docs/)** - Comprehensive guides and references
+
+- **[Quick Reference](docs/quick-reference.md)** - Command cheat sheet and common patterns
+- **[Rebase Guide](README-rebase.md)** - Detailed smart rebase functionality  
+- **[Installation Guide](INSTALL.md)** - Step-by-step installation instructions
+- **[Packaging & Distribution](docs/packaging-and-distribution.md)** - How to package and redistribute canopyctl
 
 ## Build Environment Detection
 
