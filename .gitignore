@@ -157,3 +157,21 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# canopyctl specific files
+.canopyctl-rebase-state
+canopy-backup-*
+
+# Test artifacts
+test-results/
+test-*.xml
+*.coverage
+htmlcov/
+
+# Build artifacts from PyInstaller (already covered above but being explicit)
+# *.manifest - already covered
+# *.spec - already covered
+
+# Temporary test repositories
+test_repo_*
+temp_git_*
